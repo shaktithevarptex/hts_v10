@@ -280,12 +280,15 @@ export function getDirectChildren(parentItem) {
                                     `;
             
                                     const rateHTML = `
-                                        <div class="rate-info">
-                                            <div><strong>Rate Type:</strong> ${rateType}</div>
-                                            <div><strong>Rate:</strong> ${rate} ${isInherited ? '<span class="rate-inherited">(inherited from parent)</span>' : ''}</div>
-                                            ${item.units && item.units.length > 0 ? `<div><strong>Units:</strong> ${item.units.join(', ')}</div>` : ''}
-                                        </div>
-                                    `;
+                                                                <div class="rate-info">
+                                                                    <div><strong>Rate Type:</strong> ${rateType}</div>
+                                                                    <div><strong>Rate:</strong> ${rate} ${isInherited ? '<span class="rate-inherited">(inherited from parent)</span>' : ''}</div>
+                                                                    <div><strong>Additional Duty:</strong> ${rateInfo.additionalDuty ?? '—'}</div>
+                                                                    <div><strong>Reciprocal Tariff:</strong> ${rateInfo.reciprocalTariff ?? '—'}</div>
+                                                                    <div><strong>Total Duty Rate:</strong> ${rateInfo.totalDuty ?? '—'}</div>
+                                                                    ${item.units && item.units.length > 0 ? `<div><strong>Units:</strong> ${item.units.join(', ')}</div>` : ''}
+                                                                </div>
+                                                            `;
             
                                     // Insert everything into modalBody **once**
                                     modalBody.innerHTML = breakdownHTML + rateHTML;
@@ -329,10 +332,32 @@ export function getDirectChildren(parentItem) {
                                                             selectedFilters.feature && selectedFilters.feature !== 'All'
                                                                 ? [normalizeText(selectedFilters.feature)]
                                                                 : [];
-                                
-                                
+
+                                                        // Decide whether to show Reciprocal Tariff column for this exporting country.
+                                                        const parseNum = (v) => {
+                                                            if (v === null || v === undefined) return NaN;
+                                                            if (typeof v === 'number') return v;
+                                                            const m = String(v).match(/-?\d+(?:\.\d+)?/);
+                                                            return m ? parseFloat(m[0]) : NaN;
+                                                        };
+
+                                                        let showReciprocal = false;
+                                                        const dataToScan = (appState && Array.isArray(appState.masterData) && appState.masterData.length > 0)
+                                                            ? appState.masterData
+                                                            : [...primaryResults, ...secondaryResults];
+
+                                                        for (const it of dataToScan) {
+                                                            const ri = COUNTRY_ENGINE.getDutyRate(it, exportingCountry, findParentWithRate);
+                                                            const recNum = parseNum(ri?.reciprocalTariff);
+                                                            if (Number.isFinite(recNum) && recNum !== 0) {
+                                                                showReciprocal = true;
+                                                                break;
+                                                            }
+                                                        }
+
                                                         if (primaryResults.length > 0) {
                                                             html += `
+                                                                <div class="table-wrap">
                                                                 <table class="results-table">
                                                                     <thead>
                                                                         <tr>
@@ -341,6 +366,9 @@ export function getDirectChildren(parentItem) {
                                                                             <th>Description</th>
                                                                             <th>Rate Type</th>
                                                                             <th>Rate of Duty</th>
+                                                                            <th>Additional Duty</th>
+                                                                            ${showReciprocal ? '<th>Reciprocal Tariff</th>' : ''}
+                                                                            <th>Total Duty Rate</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
@@ -420,12 +448,15 @@ export function getDirectChildren(parentItem) {
                                                                         </td>
                                                                         <td>${getRateLabel(rateInfo.column)}</td>
                                                                         <td>${rateInfo.value}</td>
+                                                                        <td>${rateInfo.additionalDuty ?? ''}</td>
+                                                                        ${showReciprocal ? `<td>${rateInfo.reciprocalTariff ?? ''}</td>` : ''}
+                                                                        <td>${rateInfo.totalDuty ?? ''}</td>
                                                                     </tr>
                                                                 `;
                                                             });
                                 
                                 
-                                                            html += '</tbody></table>';
+                                                            html += '</tbody></table></div>';
                                                         }
                                 
                                                         if (secondaryResults.length > 0) {
@@ -436,6 +467,7 @@ export function getDirectChildren(parentItem) {
                                                                         <span class="arrow">▼</span>
                                                                     </button>
                                                                     <div class="other-results-content" id="otherResultsContent">
+                                                                        <div class="table-wrap">
                                                                         <table class="results-table">
                                                                             <thead>
                                                                                 <tr>
@@ -444,6 +476,9 @@ export function getDirectChildren(parentItem) {
                                                                                     <th>Description</th>
                                                                                     <th>Rate Type</th>
                                                                                     <th>Rate</th>
+                                                                                    <th>Additional Duty</th>
+                                                                                    ${showReciprocal ? '<th>Reciprocal Tariff</th>' : ''}
+                                                                                    <th>Total Duty Rate</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
@@ -505,6 +540,9 @@ export function getDirectChildren(parentItem) {
                                                                         <td>${highlightedDescription}</td>
                                                                         <td>${getRateLabel(rateInfo.column)}</td>
                                                                         <td>${rateInfo.value}</td>
+                                                                        <td>${rateInfo.additionalDuty ?? ''}</td>
+                                                                        ${showReciprocal ? `<td>${rateInfo.reciprocalTariff ?? ''}</td>` : ''}
+                                                                        <td>${rateInfo.totalDuty ?? ''}</td>
                                                                     </tr>
                                                                 `;
                                                             });
@@ -512,8 +550,8 @@ export function getDirectChildren(parentItem) {
                                                             html += `
                                                                             </tbody>
                                                                         </table>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
                                                             `;
                                                         }
                                 

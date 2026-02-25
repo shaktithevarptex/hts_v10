@@ -1,6 +1,7 @@
 import { USA_TRADE_CONFIG } from "./config.js";
 import { COUNTRY_CODE_MAP } from "./countryCodes.js";
 import { USA_PROGRAM_COUNTRIES } from "./programCountries.js";
+import { getCountryOverrides } from "./countryDutyOverrides.js";
 
 
 export const USA_ENGINE = {
@@ -82,7 +83,10 @@ export const USA_ENGINE = {
             return {
                 value: "N/A",
                 inherited: false,
-                column: "general"
+                column: "general",
+                additionalDuty: null,
+                reciprocalTariff: null,
+                totalDuty: "N/A"
             };
         }
     
@@ -94,24 +98,71 @@ export const USA_ENGINE = {
             const inheritedRate = this.inheritRate(item, rateField, findParentWithRateFn);
     
             if (inheritedRate) {
+                // include overrides and compute totals even for inherited rates
+                const overrides = getCountryOverrides(exportingCountry) || {};
+                const additional = overrides.additionalDuty ?? null;
+                const reciprocal = overrides.reciprocalTariff ?? null;
+
+                const parseNum = (v) => {
+                    if (v === null || v === undefined) return NaN;
+                    if (typeof v === 'number') return v;
+                    const m = String(v).match(/-?\d+(?:\.\d+)?/);
+                    return m ? parseFloat(m[0]) : NaN;
+                };
+
+                const baseNum = parseNum(inheritedRate);
+                const addNum = parseNum(additional);
+                const recNum = parseNum(reciprocal);
+                const totalNum = Number.isFinite(baseNum) ?
+                    (Number.isFinite(addNum) ? baseNum + addNum + (Number.isFinite(recNum) ? recNum : 0) : (Number.isFinite(recNum) ? baseNum + recNum : NaN))
+                    : NaN;
+
                 return {
                     value: inheritedRate,
                     inherited: true,
-                    column: rateField
+                    column: rateField,
+                    additionalDuty: additional,
+                    reciprocalTariff: reciprocal,
+                    totalDuty: Number.isFinite(totalNum) ? totalNum : "N/A"
                 };
             }
     
             return {
                 value: "N/A",
                 inherited: false,
-                column: rateField
+                column: rateField,
+                additionalDuty: null,
+                reciprocalTariff: null,
+                totalDuty: "N/A"
             };
         }
-    
+
+        // Have a direct rate value — include overrides and compute total
+        const overrides = getCountryOverrides(exportingCountry) || {};
+        const additional = overrides.additionalDuty ?? null;
+        const reciprocal = overrides.reciprocalTariff ?? null;
+
+        const parseNum = (v) => {
+            if (v === null || v === undefined) return NaN;
+            if (typeof v === 'number') return v;
+            const m = String(v).match(/-?\d+(?:\.\d+)?/);
+            return m ? parseFloat(m[0]) : NaN;
+        };
+
+        const baseNum = parseNum(rate);
+        const addNum = parseNum(additional);
+        const recNum = parseNum(reciprocal);
+        const totalNum = Number.isFinite(baseNum) ?
+            (Number.isFinite(addNum) ? baseNum + addNum + (Number.isFinite(recNum) ? recNum : 0) : (Number.isFinite(recNum) ? baseNum + recNum : NaN))
+            : NaN;
+
         return {
             value: rate,
             inherited: false,
-            column: rateField
+            column: rateField,
+            additionalDuty: additional,
+            reciprocalTariff: reciprocal,
+            totalDuty: Number.isFinite(totalNum) ? totalNum : "N/A"
         };
     }
 };

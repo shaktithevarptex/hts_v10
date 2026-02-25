@@ -167,12 +167,12 @@ input[type="text"] {
 
 .results-table th:nth-child(2),
 .results-table td:nth-child(2) {
-    width: 150px;  /* HTS Code */
+    width: 160px;  /* HTS Code (increased to avoid clipping) */
 }
 
 .results-table th:nth-child(3),
 .results-table td:nth-child(3) {
-    width: auto;   /* Description takes remaining space */
+    width: 45%;   /* Slightly reduce Description width to accommodate HTS code */
 }
 
 /* Allow table cells to wrap nicely */
@@ -184,14 +184,30 @@ input[type="text"] {
 
 /* Rate Type column */
 .results-table th:nth-child(4),
+.results-table th:nth-child(4),
 .results-table td:nth-child(4) {
-    width: 120px;
+    width: 120px; /* Rate Type */
 }
 
-/* Rate of Duty column */
 .results-table th:nth-child(5),
 .results-table td:nth-child(5) {
-    width: 150px;
+    width: 110px; /* Rate of Duty */
+}
+
+/* New duty columns: Additional, Reciprocal, Total */
+.results-table th:nth-child(6),
+.results-table td:nth-child(6) {
+    width: 110px;
+}
+
+.results-table th:nth-child(7),
+.results-table td:nth-child(7) {
+    width: 110px;
+}
+
+.results-table th:nth-child(8),
+.results-table td:nth-child(8) {
+    width: 110px;
 }
 
 
@@ -209,6 +225,11 @@ input[type="text"] {
     text-overflow: ellipsis;
 }
 
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
 .results-table th {
     background: #667eea;
     color: white;
@@ -220,6 +241,14 @@ input[type="text"] {
 .results-table td {
     padding: 12px;
     border-bottom: 1px solid #e0e0e0;
+}
+
+/* Make description multi-line instead of truncating */
+.results-table th:nth-child(3),
+.results-table td:nth-child(3) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
 }
 
 .results-table tr:hover {
@@ -390,6 +419,44 @@ input[type="text"] {
     padding: 40px;
     color: #999;
     font-size: 18px;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 900px) {
+    .container {
+        padding: 16px;
+    }
+
+    /* Allow table to size automatically and wrap text */
+    .results-table {
+        table-layout: auto;
+    }
+
+    .results-table th,
+    .results-table td {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    /* Hide less-important columns on narrow screens to reduce clutter */
+    .results-table th:nth-child(4),
+    .results-table td:nth-child(4),
+    .results-table th:nth-child(7),
+    .results-table td:nth-child(7) {
+        display: none; /* hide Rate Type and Reciprocal Tariff */
+    }
+}
+
+@media (max-width: 520px) {
+    /* Further reduce padding and font for very small devices */
+    .results-table th,
+    .results-table td {
+        font-size: 12px;
+        padding: 6px;
+    }
 }
 
 .status-message {
@@ -1237,7 +1304,8 @@ pointer-events: auto;
 .hts-code-wrapper {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    min-width: 0; /* allow children to shrink properly */
 }
 
 .country-search{
@@ -1255,6 +1323,14 @@ pointer-events: auto;
     font-weight: 600;
     color: #1f3cff;
     text-decoration: underline;
+    display: inline-block;
+    flex: 0 1 auto;
+    max-width: 140px; /* prevent overly long link from pushing the i button */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 6px;
 }
 
 .hts-info-btn {
@@ -1269,6 +1345,12 @@ pointer-events: auto;
     cursor: pointer;
     padding: 0;
     line-height: 1;
+}
+
+.hts-code-wrapper .hts-info-btn {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
 }
 
 .hts-info-btn:hover {
